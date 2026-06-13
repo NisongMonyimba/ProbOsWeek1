@@ -192,18 +192,27 @@ jobs:
             texlive-pictures \
             texlive-fonts-recommended
 
-      # Step 3: Copy figure into manuscript directory
-      - name: Copy figures
+      # Step 3: Install Python + generate figures needed by manuscript
+      - name: Set up Python for figures
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generate figures
         run: |
+          pip install -r requirements.txt -q
+          python python/examples/week1_normal_demo.py || true
+          python python/examples/week2_battery_ode.py || true
           cp week1_battery_Ea_distribution.png manuscript/ 2>/dev/null || true
+          cp week2_battery_ode.png manuscript/ 2>/dev/null || true
 
       # Step 4: Build the PDF (pdflatex + bibtex + pdflatex x2)
       - name: Compile manuscript
         run: |
           cd manuscript
-          pdflatex -interaction=nonstopmode main.tex
+          pdflatex -interaction=nonstopmode main.tex || true
           bibtex main || true
-          pdflatex -interaction=nonstopmode main.tex
+          pdflatex -interaction=nonstopmode main.tex || true
           pdflatex -interaction=nonstopmode main.tex
           ls -lh main.pdf
 
