@@ -89,3 +89,4 @@ desktop.ini      # Windows folder settings
 *.pdf
 !docs/**/*.png
 !docs/**/*.pdf
+*.Identifier
