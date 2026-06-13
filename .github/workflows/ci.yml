@@ -1,0 +1,290 @@
+# =============================================================================
+# .github/workflows/ci.yml
+# ProbOS Continuous Integration Pipeline
+#
+# WHAT THIS DOES:
+#   Every time you push code or open a pull request, GitHub automatically:
+#   1. Spins up a fresh Ubuntu 22.04 virtual machine in the cloud
+#   2. Installs all dependencies (Python, C++, CMake, etc.)
+#   3. Runs the full test suite (111 Python + 13 C++ = 124 tests)
+#   4. Checks mypy strict type checking
+#   5. Checks ruff lint
+#   6. Runs all example scripts
+#   7. Compiles the LaTeX manuscript
+#   8. Reports PASS or FAIL on your GitHub repository page
+#
+# WHY THIS MATTERS:
+#   - Anyone who clones the repo can trust the badge is green
+#   - Catches bugs before they reach the main branch
+#   - Proves reproducibility: works on a clean machine, not just your laptop
+#
+# WHERE TO SEE RESULTS:
+#   https://github.com/NisongMonyimba/ProbOsWeek1/actions
+#
+# BADGE (add to README):
+#   ![CI](https://github.com/NisongMonyimba/ProbOsWeek1/actions/workflows/ci.yml/badge.svg)
+# =============================================================================
+
+name: ProbOS CI
+
+# -----------------------------------------------------------------------
+# TRIGGERS: when does this pipeline run?
+# -----------------------------------------------------------------------
+on:
+  push:
+    branches: [ main ]          # runs on every push to main
+  pull_request:
+    branches: [ main ]          # runs on every pull request targeting main
+  workflow_dispatch:            # allows manual trigger from GitHub UI
+
+# -----------------------------------------------------------------------
+# JOBS
+# -----------------------------------------------------------------------
+jobs:
+
+  # =====================================================================
+  # JOB 1: Python tests + static analysis
+  # =====================================================================
+  python-tests:
+    name: Python Tests (pytest + mypy + ruff)
+    runs-on: ubuntu-22.04
+
+    steps:
+
+      # Step 1: Check out the repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python 3.11
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Step 3: Cache pip packages so reruns are faster
+      # The cache key includes the requirements.txt hash so the cache
+      # is invalidated whenever dependencies change.
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # Step 4: Install Python dependencies
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Step 5: Run pytest -- all 111 tests
+      - name: Run pytest (111 tests)
+        run: |
+          python -m pytest python/tests/ -v --tb=short --no-header
+          echo "pytest exit code: $?"
+
+      # Step 6: mypy strict type checking
+      - name: mypy strict type check
+        run: |
+          python -m mypy python/src/ \
+            --strict \
+            --ignore-missing-imports \
+            --explicit-package-bases \
+            --no-error-summary
+          echo "mypy exit code: $?"
+
+      # Step 7: ruff lint
+      - name: ruff lint
+        run: |
+          python -m ruff check python/src/ python/tests/ python/examples/ \
+            --select E,F,W
+          echo "ruff exit code: $?"
+
+      # Step 8: Run Week 1 examples
+      - name: Run Week 1 examples
+        run: |
+          python python/examples/week1_coin_flip.py
+          python python/examples/week1_normal_demo.py
+
+      # Step 9: Run Week 2 examples
+      - name: Run Week 2 examples
+        run: |
+          python python/examples/week2_battery_ode.py
+          python python/examples/week2_clt_demo.py
+
+      # Step 10: Upload example figures as artifacts
+      # These are saved and viewable in the GitHub Actions run page
+      - name: Upload example figures
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: example-figures
+          path: |
+            week1_battery_Ea_distribution.png
+            week2_battery_ode.png
+            week2_clt_demo.png
+          retention-days: 30
+
+  # =====================================================================
+  # JOB 2: C++ build and tests
+  # =====================================================================
+  cpp-tests:
+    name: C++ Tests (cmake + ninja + ctest)
+    runs-on: ubuntu-22.04
+
+    steps:
+
+      # Step 1: Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install C++ build tools and Google Test
+      - name: Install C++ dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            libgtest-dev \
+            libgmock-dev
+          echo "g++ version: $(g++ --version | head -1)"
+          echo "cmake version: $(cmake --version | head -1)"
+          echo "ninja version: $(ninja --version)"
+
+      # Step 3: Configure with CMake
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -Wno-dev
+
+      # Step 4: Build C++ code
+      - name: Build C++
+        run: cmake --build build
+
+      # Step 5: Run C++ tests with ctest
+      - name: Run ctest (13 tests)
+        run: |
+          cd build
+          ctest --output-on-failure -v
+
+  # =====================================================================
+  # JOB 3: LaTeX manuscript build
+  # =====================================================================
+  manuscript:
+    name: LaTeX Manuscript (pdflatex)
+    runs-on: ubuntu-22.04
+
+    steps:
+
+      # Step 1: Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install LaTeX packages
+      - name: Install LaTeX
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            texlive-latex-extra \
+            texlive-science \
+            texlive-pictures \
+            texlive-fonts-recommended
+
+      # Step 3: Copy figure into manuscript directory
+      - name: Copy figures
+        run: |
+          cp week1_battery_Ea_distribution.png manuscript/ 2>/dev/null || true
+
+      # Step 4: Build the PDF (pdflatex + bibtex + pdflatex x2)
+      - name: Compile manuscript
+        run: |
+          cd manuscript
+          pdflatex -interaction=nonstopmode main.tex
+          bibtex main || true
+          pdflatex -interaction=nonstopmode main.tex
+          pdflatex -interaction=nonstopmode main.tex
+          ls -lh main.pdf
+
+      # Step 5: Upload the compiled PDF as an artifact
+      - name: Upload manuscript PDF
+        uses: actions/upload-artifact@v4
+        with:
+          name: manuscript-pdf
+          path: manuscript/main.pdf
+          retention-days: 90
+
+  # =====================================================================
+  # JOB 4: Full integration test (equivalent to RunAll.sh)
+  # =====================================================================
+  integration:
+    name: Full Integration (RunAll.sh equivalent)
+    runs-on: ubuntu-22.04
+    needs: [ python-tests, cpp-tests ]   # only runs if both above pass
+
+    steps:
+
+      # Step 1: Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Step 3: Install C++ tools
+      - name: Install C++ dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            build-essential cmake ninja-build \
+            libgtest-dev libgmock-dev
+
+      # Step 4: Install Python dependencies
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      # Step 5: Build C++
+      - name: Build C++
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -Wno-dev
+          cmake --build build
+
+      # Step 6: Run all tests together
+      - name: Run all 124 tests
+        run: |
+          echo "=== Python tests ==="
+          python -m pytest python/tests/ -q --tb=short
+          echo ""
+          echo "=== C++ tests ==="
+          cd build && ctest --output-on-failure -q && cd ..
+          echo ""
+          echo "=== Static analysis ==="
+          python -m mypy python/src/ --strict --ignore-missing-imports --explicit-package-bases --no-error-summary
+          python -m ruff check python/src/ python/tests/ python/examples/ --select E,F,W
+          echo ""
+          echo "ALL CHECKS PASSED"
+
+      # Step 7: Run all examples
+      - name: Run all examples
+        run: |
+          python python/examples/week1_coin_flip.py
+          python python/examples/week1_normal_demo.py
+          python python/examples/week2_battery_ode.py
+          python python/examples/week2_clt_demo.py
+          echo "ALL EXAMPLES PASSED"
+
+      # Step 8: Print summary
+      - name: Print summary
+        run: |
+          echo "============================================================"
+          echo "  PROBOS CI -- ALL JOBS PASSED"
+          echo "  Week 1: 44 Python + 13 C++ tests"
+          echo "  Week 2: 67 Python tests (27 state + 40 battery)"
+          echo "  Total : 111 Python + 13 C++ = 124 tests"
+          echo "  mypy  : 0 errors"
+          echo "  ruff  : 0 warnings"
+          echo "============================================================"
