@@ -1,0 +1,142 @@
+# =============================================================================
+# pyproject.toml — Python project configuration
+# =============================================================================
+#
+# This single file replaces setup.py, setup.cfg, .mypy.ini, .ruff.toml, and
+# pytest.ini. Python projects should have ONE configuration file, not five.
+#
+# The [build-system] section tells pip HOW to build the package.
+# The [project] section tells pip WHAT the package is.
+# The [tool.*] sections configure our development tools.
+# =============================================================================
+
+[build-system]
+# setuptools is the most widely-used Python build backend.
+# We need version >= 68 for full pyproject.toml support.
+requires      = ["setuptools>=68"]
+build-backend = "setuptools.backends.legacy:build"
+
+
+[project]
+name        = "probos-kernel"
+version     = "0.0.1"
+description = "A probabilistic execution runtime for stochastic dynamical systems"
+readme      = "README.md"
+license     = {text = "Apache-2.0"}
+
+# Python 3.11+ required for:
+#   - X | Y union type syntax (used instead of Union[X, Y])
+#   - Faster specialising adaptive interpreter
+#   - tomllib in stdlib
+requires-python = ">=3.11"
+
+authors = [
+    {name = "Nisong Monyimba", email = "nisong@realitycomputing.ai"}
+]
+
+keywords = [
+    "probability",
+    "monte-carlo",
+    "stochastic",
+    "simulation",
+    "uncertainty-quantification",
+    "bayesian",
+    "probabilistic-programming",
+]
+
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+
+# Minimum runtime dependencies (what users need to import probos)
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.12",
+]
+
+# Optional dependency groups — install with: pip install -e ".[dev]"
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "hypothesis>=6.92",
+    "mypy>=1.8",
+    "ruff>=0.3",
+    "matplotlib>=3.8",
+]
+sim = [
+    "SALib>=1.5",
+    "numba>=0.59",
+    "plotly>=5.18",
+]
+
+
+# =============================================================================
+# mypy configuration — static type checker
+# =============================================================================
+[tool.mypy]
+# strict = true enables ALL optional checks. This is intentional.
+# It means:
+#   - Every function parameter must have a type annotation.
+#   - Every return type must be annotated.
+#   - No use of 'Any' without an explicit cast.
+# This catches bugs before they reach production.
+strict          = true
+python_version  = "3.11"
+warn_return_any = true
+warn_unused_ignores = true
+
+
+# =============================================================================
+# ruff configuration — linter and formatter
+# =============================================================================
+[tool.ruff]
+line-length    = 88        # matches Black's default
+target-version = "py311"
+
+[tool.ruff.lint]
+# Selected rule sets:
+#   E/F  = pyflakes + pycodestyle (the classics)
+#   I    = isort (import ordering)
+#   UP   = pyupgrade (use modern Python syntax)
+#   B    = bugbear (common bug patterns)
+#   SIM  = simplify (simplifiable code)
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = []
+
+
+# =============================================================================
+# pytest configuration — test runner
+# =============================================================================
+[tool.pytest.ini_options]
+# testpaths: where pytest looks for test files
+testpaths = ["python/tests"]
+
+# addopts: extra command-line options applied automatically
+#   -v             : verbose output (show each test name)
+#   --tb=short     : short traceback on failure (not the wall of text default)
+#   --strict-markers : fail if a test uses an undeclared marker
+addopts = "-v --tb=short --strict-markers"
+
+# Custom markers — declare here to avoid warnings
+markers = [
+    "slow: marks tests that take > 5 seconds (skip with: pytest -m 'not slow')",
+    "integration: marks tests that require external data or long computation",
+]
+
+
+# =============================================================================
+# coverage configuration — measures test coverage
+# =============================================================================
+[tool.coverage.run]
+source = ["python/src"]
+branch = true     # measure branch coverage (if/else both taken?)
+
+[tool.coverage.report]
+fail_under   = 70       # fail CI if coverage drops below 70%
+show_missing = true     # show which lines are NOT covered
