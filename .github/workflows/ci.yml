@@ -167,7 +167,7 @@ jobs:
       - name: Run ctest (13 tests)
         run: |
           cd build
-          ctest --output-on-failure -v
+          ctest --output-on-failure
 
   # =====================================================================
   # JOB 3: LaTeX manuscript build
