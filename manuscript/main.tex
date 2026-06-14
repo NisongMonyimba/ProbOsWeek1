@@ -120,7 +120,7 @@ and \texttt{ProvenanceTracker} recording which parameter combinations
 drove the dangerous tail outcomes.
 
 All code passes \texttt{mypy} strict type checking and \texttt{ruff} lint
-with zero errors across 202~Python tests and 13~C++ tests.
+with zero errors across 202~Python tests and 13~C++ tests (215 total).
 The full codebase is publicly available at
 \url{https://github.com/NisongMonyimba/ProbOs}.
 
@@ -338,6 +338,23 @@ The three sequential exothermic reactions follow the Arrhenius law
 
 The model has \texttt{state\_dim}=8 and \texttt{param\_dim}=15,
 with nominal parameters from Kim et al.~\cite{kim2007}.
+
+Figure~\ref{fig:week2_ode} shows the deterministic ODE trajectory
+using nominal parameters under adiabatic conditions, confirming
+onset at $T=403$~K and rapid thermal runaway within minutes.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]{week2_battery_ode.png}
+\caption{Deterministic \texttt{BatteryModel2Cell} simulation using
+  Kim~2007 nominal parameters. Adiabatic conditions ($h_{\text{conv}}=0$).
+  Top: temperature trajectories for both cells.
+  Bottom: SEI and anode reactant depletion.
+  This single trajectory is what a deterministic model sees.
+  ProbOS simulates 5{,}000 such trajectories simultaneously with
+  uncertain parameters to reveal the tail risk.}
+\label{fig:week2_ode}
+\end{figure}
 
 % ============================================================
 \section{Week 3: Monte Carlo Engine}
@@ -562,9 +579,8 @@ git clone https://github.com/NisongMonyimba/ProbOs
 cd ProbOs
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]" && pip install SALib matplotlib scipy
-python -m pytest python/tests/    # 202 tests pass
-python python/examples/week3_mc_battery.py
-python python/examples/week3_sobol_battery.py
+bash RunTests.sh   # 202 Python + 13 C++ tests, mypy, ruff
+bash RunAll.sh     # all examples end-to-end
 \end{lstlisting}
 
 % ============================================================
@@ -609,7 +625,7 @@ and \texttt{ProvenanceTracker} providing regulatory-grade causal
 audit trails linking dangerous tail outcomes to their generating
 parameter combinations.
 
-The combined codebase comprises 202~Python tests and 13~C++ tests,
+The combined codebase comprises 202~Python tests and 13~C++ tests (215 total),
 passing \texttt{mypy} strict and \texttt{ruff} with zero errors.
 
 % ============================================================
