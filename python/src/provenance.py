@@ -274,8 +274,10 @@ class ProvenanceTracker:
         """
         final_values   = result.trajectories[:, timestep, state_idx]
         p05_threshold  = result.percentiles[0, timestep, state_idx]
-        particle_ids   = np.where(final_values <= p05_threshold)[0]
-        return particle_ids.tolist()
+        particle_ids: list[int] = (
+            np.where(final_values <= p05_threshold)[0].tolist()
+        )
+        return particle_ids
 
     def query_p05_param_values(
         self,

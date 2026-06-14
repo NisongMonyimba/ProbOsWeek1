@@ -18,7 +18,7 @@ import pytest
 from python.src.battery_model import BatteryModel2Cell
 from python.src.monte_carlo import MCResult, MonteCarloEngine
 from python.src.parameter_priors import build_battery_priors
-from python.src.provenance import ProvenanceNode, ProvenanceTracker
+from python.src.provenance import ProvenanceTracker
 
 
 # ---------------------------------------------------------------------------
@@ -89,7 +89,7 @@ class TestProvenanceRecording:
     ) -> None:
         t = ProvenanceTracker()
         t.record_from_result(result, model.param_names())
-        nid   = f"param_Ea_SEI_p0"
+        nid   = "param_Ea_SEI_p0"
         nodes = t.query_ancestors(nid)
         param_node = next(n for n in nodes if n.node_id == nid)
         assert param_node.parent_ids == []
@@ -227,7 +227,10 @@ class TestSerialisation:
         self, tracker: ProvenanceTracker
     ) -> None:
         d     = tracker.to_dict()
-        node  = d["nodes"][0]
+        nodes = d["nodes"]
+        assert isinstance(nodes, list)
+        node  = nodes[0]
+        assert isinstance(node, dict)
         required = {
             "node_id", "node_type", "name",
             "value", "timestep", "particle_id", "parent_ids"
