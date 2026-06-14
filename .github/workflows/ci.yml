@@ -42,15 +42,15 @@ jobs:
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.3.0
         with:
           python-version: "3.11"
 
       - name: Cache pip packages
-        uses: actions/cache@v4
+        uses: actions/cache@v4.2.0
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
@@ -99,7 +99,7 @@ jobs:
           python python/examples/week3_sobol_battery.py
 
       - name: Upload figures
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.0
         if: always()
         with:
           name: example-figures
@@ -120,7 +120,7 @@ jobs:
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
       - name: Install C++ dependencies
         run: |
@@ -161,7 +161,7 @@ jobs:
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
       - name: Install LaTeX
         run: |
@@ -173,7 +173,7 @@ jobs:
             texlive-fonts-recommended
 
       - name: Set up Python for figures
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.3.0
         with:
           python-version: "3.11"
 
@@ -201,7 +201,7 @@ jobs:
           ls -lh main.pdf
 
       - name: Upload manuscript PDF
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.0
         with:
           name: manuscript-pdf
           path: manuscript/main.pdf
@@ -218,10 +218,10 @@ jobs:
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.3.0
         with:
           python-version: "3.11"
 
