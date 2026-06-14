@@ -77,7 +77,7 @@ bash RunAll.sh     # all examples end-to-end
 ```
 1. Open File Explorer
 2. In the address bar type:
-   \\wsl.localhost\Ubuntu-22.04\home\nison\ProbOsWeek1
+   \\wsl.localhost\Ubuntu-22.04\home\nison\ProbOs
 3. Right-click RunProbOS.ps1
 4. Click: Run with PowerShell
 5. Choose: [1] RunAll.sh
@@ -149,7 +149,7 @@ ALL 8 STEPS PASSED
 ### Repository Structure
 
 ```
-ProbOsWeek1/
+ProbOs/
 |
 +-- python/                           Python implementation
 |   +-- src/
@@ -170,7 +170,7 @@ ProbOsWeek1/
 |       +-- test_normal.cpp            13 Google Test cases
 |
 +-- scripts/                          Automation
-|   +-- RunAll.sh                     8-step full pipeline
+|   +-- RunAll.sh                     run all examples
 |   +-- RunTests.sh                   Tests only (~30 seconds)
 |   +-- setup_and_run.sh              Interactive WSL launcher
 |
