@@ -4,9 +4,9 @@
 
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![C++](https://img.shields.io/badge/C++-20-00599C?style=for-the-badge&logo=cplusplus&logoColor=white)
-![Tests](https://img.shields.io/badge/Tests-44%20Python%20%2B%2013%20C%2B%2B-brightgreen?style=for-the-badge)
+![Tests](https://img.shields.io/badge/Tests-202%20Python%20%2B%2013%20C%2B%2B-brightgreen?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
-![Status](https://img.shields.io/badge/Week%201-Complete-blue?style=for-the-badge)
+![Status](https://img.shields.io/badge/Week%203-Complete-blue?style=for-the-badge)
 
 **Uncertainty is a first-class data type.**
 
@@ -15,7 +15,7 @@
 [What is ProbOS?](#what-is-probos) •
 [Quick Start](#quick-start) •
 [Architecture](#architecture) •
-[Week 1 Results](#week-1-results) •
+[Week 3 Results](#week-3-results) •
 [How to Run](#how-to-run) •
 [Roadmap](#roadmap)
 
@@ -64,10 +64,12 @@ That tail risk is completely invisible to deterministic models.
 ### Clone and run (Ubuntu / WSL)
 
 ```bash
-git clone https://github.com/NisongMonyimba/ProbOsWeek1
-cd ProbOsWeek1
-chmod +x scripts/RunAll.sh
-./scripts/RunAll.sh
+git clone https://github.com/NisongMonyimba/ProbOs
+cd ProbOs
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e '.[dev]' && pip install SALib matplotlib scipy
+bash RunTests.sh   # 202 Python + 13 C++ tests
+bash RunAll.sh     # all examples end-to-end
 ```
 
 ### Run from Windows (PowerShell)
@@ -185,7 +187,7 @@ ProbOsWeek1/
 
 ---
 
-## Week 1 Results
+## Week 3 Results
 
 ### The Core Insight: Why `log_pdf` Must Be Analytical
 
@@ -210,6 +212,35 @@ Concrete example at `x = mu + 50*sigma` (50 standard deviations from mean):
 > A single `-inf` in Bayesian inference collapses the entire posterior.
 > This is why `log_pdf` is an *abstract method* — every distribution
 > must implement it analytically or the system refuses to run.
+
+### Week 3: Monte Carlo Engine
+
+Running N=5,000 particles through `BatteryModel2Cell` simultaneously:
+
+| Metric | Value |
+|--------|-------|
+| Particles | 5,000 |
+| Steps | 300 (300 min) |
+| P95 − P05 temperature spread | measured |
+| sigma/sqrt(N) for T1 at N=5000 | 7.30 K |
+| CLT log-log slope | −0.569 (theory −0.500) |
+
+### Week 3: Sobol Sensitivity (N_saltelli=1024, 17,408 evaluations)
+
+| Parameter | S1 | ST | Interpretation |
+|-----------|----|----|----------------|
+| **Ea_SEI** | **0.457** | **0.729** | Dominates — 46% of T1 variance |
+| Ea_anode | 0.235 | 0.489 | Second — 24% direct effect |
+| All others | <0.03 | <0.09 | Negligible |
+
+### Week 3: Provenance — P05 Causal Audit
+
+```
+P05 Ea_SEI mean : 144,354 J/mol
+Nominal Ea_SEI  : 135,080 J/mol
+Interpretation  : P05 tail has HIGHER Ea_SEI -> slower decomposition
+                  -> lower temperature at short timescales (correct physics)
+````
 
 ### Battery Safety Application
 
@@ -259,8 +290,8 @@ ruff:            0 warnings
 ### Full pipeline (first time or after code changes)
 
 ```bash
-cd /home/nison/ProbOsWeek1
-./scripts/RunAll.sh
+cd /home/nison/ProbOs
+bash RunAll.sh
 ```
 
 Runs all 8 steps: requirements check, venv setup, pip install,
@@ -269,24 +300,27 @@ pytest, cmake + ninja build, ctest, examples, C++ demo.
 ### Tests only (fast iteration during development)
 
 ```bash
-cd /home/nison/ProbOsWeek1
-source .venv/bin/activate
-./scripts/RunTests.sh
+cd /home/nison/ProbOs
+bash RunTests.sh
 # Runs: pytest + mypy + ruff + ctest in ~30 seconds
 ```
 
 ### Run a specific example
 
 ```bash
-cd /home/nison/ProbOsWeek1
-source .venv/bin/activate
+cd /home/nison/ProbOs
 
-# Coin flip: Law of Large Numbers (error shrinks like 1/sqrt(N))
-python python/examples/week1_coin_flip.py
+# Week 2: deterministic ODE
+.venv/bin/python python/examples/week2_battery_ode.py
 
-# Battery demo: SEI activation energy uncertainty
-python python/examples/week1_normal_demo.py
-# Saves plot: week1_battery_Ea_distribution.png
+# Week 3: Monte Carlo fan plot (N=5000, 300 steps)
+.venv/bin/python python/examples/week3_mc_battery.py
+
+# Week 3: CLT convergence verification
+.venv/bin/python python/examples/week3_clt_convergence.py
+
+# Week 3: Sobol sensitivity (17,408 evaluations)
+.venv/bin/python python/examples/week3_sobol_battery.py
 ```
 
 ### Use the library in your own Python code
@@ -360,37 +394,36 @@ Year 1 Build Plan
 |   +-- mypy strict + ruff: zero issues
 |   +-- Research paper: manuscript/main.pdf
 |
-+-- Week 2  [NEXT]       Model ABC + BatteryModel2Cell
-|   +-- Model abstract base class
-|   |   +-- state_dim, param_dim, param_names
-|   |   +-- initial_state() -> FloatArray
-|   |   +-- forward_batch(state (N,d), params (N,p), dt) -> FloatArray
-|   +-- BatteryModel2Cell
-|   |   +-- 8-state Arrhenius ODE
-|   |   +-- 15 uncertain parameters from Kim 2007
-|   |   +-- vectorised over N particles (NumPy broadcasting)
-|   +-- Validation: Kim 2007 ARC test, onset temp +/- 5 C
-|   +-- CLT convergence demo
++-- Week 2  [COMPLETE]   Model ABC + BatteryModel2Cell
+|   +-- Model ABC: state_dim, param_dim, forward_batch
+|   +-- BatteryModel2Cell: 8-state Arrhenius ODE, 15 params
+|   +-- Kim 2007 ARC validation: onset temp within 5 C
+|   +-- 67 new Python tests (111 total)
 |
-+-- Week 3              Monte Carlo Engine
-|   +-- MonteCarloEngine(model, priors, N=5000)
-|   +-- Vectorised forward simulation
-|   +-- Convergence certificate (1/sqrt(N) error bound)
++-- Week 3  [COMPLETE]   Monte Carlo Engine + Sobol + Provenance
+|   +-- MonteCarloEngine: P05/P50/P95, sigma/sqrt(N) certificate
+|   +-- SobolSensitivity: S1=0.457 for Ea_SEI (dominates T1)
+|   +-- ProvenanceTracker: causal DAG, P05 ancestor query
+|   +-- 91 new Python tests (202 total)
+|   +-- 13-page manuscript
 |
-+-- Week 4              Sobol Sensitivity Analysis
-|   +-- First-order indices (main effects)
-|   +-- Total-effect indices (interactions)
-|   +-- Identify which battery parameter dominates thermal runaway
++-- Week 4  [NEXT]       GPU/OpenMP + PDSL Compiler
+|   +-- OpenMP CPU parallelisation of forward_batch (10x target)
+|   +-- PDSL compiler v0.1 (Lark grammar -> AST -> Python codegen)
+|   +-- arXiv submission
+|   +-- Open-source release v0.1.0
 |
-+-- Month 2             Particle Filter
-|   +-- Sequential Monte Carlo
-|   +-- Online state estimation from sensor data
++-- Month 2             FastAPI + Particle Filter
+|   +-- /simulate, /sensitivity, /provenance endpoints
+|   +-- Sequential Monte Carlo particle filter
+|   +-- Docker container
 |
-+-- Month 3             Causal Provenance Graph
-|   +-- Audit trail: which particles drove which outcomes
-|   +-- Regulatory-grade traceability
++-- Month 3             C++ Kernel + pybind11
+|   +-- StochasticSystem C++20 concept
+|   +-- BatteryCell in C++ satisfying concept
+|   +-- pybind11 bindings
 |
-+-- Month 4             PDSL Compiler
++-- Month 4             PDSL Compiler + Full Release
 |   +-- Probabilistic Domain-Specific Language
 |   +-- Compile uncertain programs to Monte Carlo execution plans
 |
@@ -422,7 +455,7 @@ The Week 1 implementation is documented as a full software paper:
 | Reproducibility | One-command checklist |
 | Week 2 Roadmap | Model ABC, BatteryModel2Cell plan |
 
-Compile: `cd manuscript && make` → `manuscript/main.pdf` (11 pages)
+Compile: `cd manuscript && pdflatex main.tex` → `manuscript/main.pdf` (13 pages)
 
 ---
 
@@ -430,14 +463,14 @@ Compile: `cd manuscript && make` → `manuscript/main.pdf` (11 pages)
 
 | Item | Detail |
 |------|--------|
-| Author | Nisong Monyimba |
+| Author | [AUTHOR NAME] |
 | Organisation | Reality Computing Corporation |
 | Started | June 2026 |
 | License | MIT |
 | Languages | Python 3.11 + C++20 |
 | Build system | CMake 3.22 + Ninja |
 | Platform | Ubuntu 22.04 / WSL2 |
-| Repository | https://github.com/NisongMonyimba/ProbOsWeek1 |
+| Repository | https://github.com/NisongMonyimba/ProbOs |
 
 ---
 
