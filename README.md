@@ -327,7 +327,7 @@ cd /home/nison/ProbOs
 
 ```python
 import sys
-sys.path.insert(0, "/path/to/ProbOsWeek1")
+sys.path.insert(0, "/path/to/ProbOs")
 
 from python.src.distributions import Normal, LogNormal, Beta, Uniform, Empirical
 import numpy as np
@@ -350,7 +350,7 @@ print(f"Mean: {Ea.mean():.0f} J/mol")
 ### Compile the research paper
 
 ```bash
-cd /home/nison/ProbOsWeek1/manuscript
+cd /home/nison/ProbOs/manuscript
 make
 # Output: main.pdf (11 pages)
 ```
