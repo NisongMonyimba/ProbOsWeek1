@@ -227,11 +227,14 @@ class BatteryModel2Cell(Model):
         T2_safe = np.clip(T2, 273.15, 5000.0)
 
         # Arrhenius exponent: -Ea / (R * T)  for each reaction, Cell 1
+        # Note (Week 4 profiling): NumPy exp() is SIMD-vectorised per call.
+        # Batching exp calls or precomputing inv_RT showed no speedup in
+        # Python (exp dominates; division cost is negligible).
+        # Real parallelism gain deferred to C++ OpenMP kernel (Week 4 Tue).
         k_sei1 = A_SEI * np.exp(-Ea_SEI / (R_GAS * T1_safe))
         k_an1  = A_an  * np.exp(-Ea_an  / (R_GAS * T1_safe))
         k_ca1  = A_ca  * np.exp(-Ea_ca  / (R_GAS * T1_safe))
 
-        # Same for Cell 2
         k_sei2 = A_SEI * np.exp(-Ea_SEI / (R_GAS * T2_safe))
         k_an2  = A_an  * np.exp(-Ea_an  / (R_GAS * T2_safe))
         k_ca2  = A_ca  * np.exp(-Ea_ca  / (R_GAS * T2_safe))

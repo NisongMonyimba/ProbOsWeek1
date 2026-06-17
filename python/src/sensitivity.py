@@ -150,10 +150,30 @@ class SobolSensitivity:
         self._n_steps    = n_steps
         self._dt         = dt
         self._seed       = seed
+        # DP: cache SALib problem dict once at init, not per run()
+        self._problem: dict[str, object] = self._build_problem()
 
     @property
     def N_saltelli(self) -> int:
         return self._N_saltelli
+
+    def _build_problem(self) -> dict[str, object]:
+        """Build SALib problem dict from prior supports. Cached at __init__."""
+        pd     = self._model.param_dim
+        pnames = self._model.param_names()
+        bounds: list[list[float]] = []
+        for prior in self._priors:
+            lo, hi = prior.support()
+            if not np.isfinite(lo):
+                lo = float(prior.mean() - 4.0 * float(np.sqrt(prior.variance())))
+            if not np.isfinite(hi):
+                hi = float(prior.mean() + 4.0 * float(np.sqrt(prior.variance())))
+            bounds.append([lo, hi])
+        return {
+            "num_vars": pd,
+            "names":    pnames,
+            "bounds":   bounds,
+        }
 
     def run(self) -> SobolResult:
         """
@@ -169,26 +189,11 @@ class SobolSensitivity:
         6. For each state variable k: call SALib sobol.analyze on Y[:, k].
         7. Assemble SobolResult.
         """
-        pd = self._model.param_dim
-        sd = self._model.state_dim
-        pnames = self._model.param_names()
-
-        # Step 1: build SALib problem from prior supports
-        bounds = []
-        for prior in self._priors:
-            lo, hi = prior.support()
-            # For unbounded distributions (Normal), use ±4 sigma
-            if not np.isfinite(lo):
-                lo = float(prior.mean() - 4.0 * float(np.sqrt(prior.variance())))
-            if not np.isfinite(hi):
-                hi = float(prior.mean() + 4.0 * float(np.sqrt(prior.variance())))
-            bounds.append([lo, hi])
-
-        problem = {
-            "num_vars": pd,
-            "names":    pnames,
-            "bounds":   bounds,
-        }
+        # Use cached problem dict (built once at __init__)
+        problem = self._problem
+        pd      = self._model.param_dim
+        sd      = self._model.state_dim
+        pnames  = self._model.param_names()
 
         # Step 2: Saltelli sample -- shape (N_saltelli*(2*pd+2), pd)
         np.random.seed(self._seed)
