@@ -5,6 +5,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# -----------------------------------------------------------------------
+# Compiler flags
+# -----------------------------------------------------------------------
 add_compile_options(-Wall -Wextra -Wpedantic)
 add_compile_options(
     $<$<CONFIG:Debug>:-fsanitize=address,undefined>
@@ -15,8 +18,22 @@ add_link_options($<$<CONFIG:Debug>:-fsanitize=address,undefined>)
 add_compile_options(
     $<$<CONFIG:Release>:-O3>
     $<$<CONFIG:Release>:-DNDEBUG>
+    $<$<CONFIG:Release>:-march=native>
 )
 
+# -----------------------------------------------------------------------
+# OpenMP
+# -----------------------------------------------------------------------
+find_package(OpenMP QUIET)
+if(OpenMP_CXX_FOUND)
+    message(STATUS "OpenMP found -- parallel MC enabled")
+else()
+    message(WARNING "OpenMP not found -- building serial fallback")
+endif()
+
+# -----------------------------------------------------------------------
+# Distribution library (Week 1)
+# -----------------------------------------------------------------------
 add_library(probos_distributions STATIC
     src/distributions/normal.cpp
 )
@@ -24,9 +41,38 @@ target_include_directories(probos_distributions
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+# -----------------------------------------------------------------------
+# MC OMP library (Week 4)
+# -----------------------------------------------------------------------
+add_library(probos_mc_omp STATIC
+    src/kernel/monte_carlo_omp.cpp
+)
+target_include_directories(probos_mc_omp
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(probos_mc_omp PUBLIC OpenMP::OpenMP_CXX)
+    target_compile_definitions(probos_mc_omp PUBLIC PROBOS_OPENMP_ENABLED)
+endif()
+
+# -----------------------------------------------------------------------
+# Main demo (Week 1)
+# -----------------------------------------------------------------------
 add_executable(probos_main src/main.cpp)
 target_link_libraries(probos_main PRIVATE probos_distributions)
 
+# -----------------------------------------------------------------------
+# OpenMP benchmark (Week 4)
+# -----------------------------------------------------------------------
+add_executable(benchmark_omp src/kernel/benchmark_omp.cpp)
+target_link_libraries(benchmark_omp PRIVATE probos_mc_omp)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(benchmark_omp PRIVATE OpenMP::OpenMP_CXX)
+endif()
+
+# -----------------------------------------------------------------------
+# Tests
+# -----------------------------------------------------------------------
 find_package(GTest QUIET)
 if(GTest_FOUND)
     message(STATUS "Google Test found -- building C++ tests")
