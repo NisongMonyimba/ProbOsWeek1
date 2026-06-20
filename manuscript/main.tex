@@ -132,7 +132,7 @@ The full codebase is publicly available at
 
 Deterministic simulation uses a single parameter value where there should
 be a distribution.
-A deterministic battery model uses one activation energy.
+A deterministic battery model uses one activation energy. Modern reviews of thermal runaway mechanisms~\citep{feng2018,wang2021} confirm that the cascade of exothermic reactions modelled here (SEI decomposition, anode reaction, cathode reaction) remains the standard kinetic framework, extending Kim et al.~\citep{kim2007}.
 ProbOS simulates 5\,000 batteries simultaneously and finds that the P95
 worst-case cell (hottest 5\%) heats significantly faster than the median,
 and that activation energy $E_{a,\text{SEI}}$ alone explains 45.7\% of
@@ -391,7 +391,7 @@ giving a 95\% CI of $\pm 14.3$~K.
 
 \subsection{Sobol Sensitivity Analysis}
 
-We use the Saltelli sampling scheme with $N_\text{Saltelli}=1024$,
+Saltelli et al.~\citep{saltelli2019} caution that a majority of published sensitivity analyses use sample sizes too small for reliable convergence -- a concern we address directly in Section~\ref{sec:clt} via explicit convergence verification. We use the Saltelli sampling scheme with $N_\text{Saltelli}=1024$,
 requiring $1024 \times (d+2) = 17\,408$ model evaluations for $d=15$
 parameters.
 Results for $T_1$ at $t=10$~s:

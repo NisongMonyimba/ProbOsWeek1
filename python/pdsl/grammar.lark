@@ -1,0 +1,80 @@
+// =============================================================================
+// python/pdsl/grammar.lark -- ProbOS PDSL v0.1
+// =============================================================================
+
+start        : model+
+
+model        : "model" NAME "{" stmt+ "}"
+
+stmt         : state_decl
+             | param_decl
+             | drift_decl
+             | run_decl
+
+// -----------------------------------------------------------------------
+// Declarations
+// -----------------------------------------------------------------------
+state_decl   : "state" NAME "=" number
+
+param_decl   : "param" NAME "~" distribution
+
+drift_decl   : "drift" NAME "=" expr
+
+run_decl     : "run" run_opt+
+
+run_opt      : "N"     "=" INTEGER  -> run_n
+             | "steps" "=" INTEGER  -> run_steps
+             | "dt"    "=" number   -> run_dt
+             | "seed"  "=" INTEGER  -> run_seed
+
+// -----------------------------------------------------------------------
+// Distributions (args are plain numbers only -- not expressions)
+// -----------------------------------------------------------------------
+distribution : NAME "(" numlist ")"
+
+numlist      : number ("," number)*
+
+// -----------------------------------------------------------------------
+// Expressions -- full arithmetic + unary minus + function calls
+// Function call arguments ARE full expressions (to support exp(-x/y))
+// -----------------------------------------------------------------------
+?expr        : expr "+" term    -> add
+             | expr "-" term    -> sub
+             | term
+
+?term        : term "*" factor  -> mul
+             | term "/" factor  -> div
+             | factor
+
+?factor      : "-" factor       -> neg
+             | "+" factor       -> pos
+             | power
+
+?power       : atom "**" factor -> pow
+             | atom
+
+?atom        : NUMBER           -> number_lit
+             | INTEGER          -> number_lit
+             | NAME "(" exprlist ")" -> func_call
+             | NAME             -> var
+             | "(" expr ")"
+
+exprlist     : expr ("," expr)*
+
+// -----------------------------------------------------------------------
+// Plain number (for state init values, distribution args, run opts)
+// -----------------------------------------------------------------------
+number       : NUMBER
+             | INTEGER
+
+// -----------------------------------------------------------------------
+// Terminals
+// -----------------------------------------------------------------------
+NAME         : /[a-zA-Z_][a-zA-Z0-9_]*/
+INTEGER      : /[0-9]+/
+NUMBER       : /[0-9]+\.[0-9]+([eE][+-]?[0-9]+)?/
+             | /[0-9]+[eE][+-]?[0-9]+/
+
+%import common.WS
+%ignore WS
+%ignore /\/\/[^\n]*/
